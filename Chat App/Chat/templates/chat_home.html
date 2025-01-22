@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Home</title>
+    <link rel="stylesheet" href="chat_home.css">
+</head>
+<body>
+    <!-- Sidebar with collapsible menu -->
+    <div id="sidebar">
+        <h2>Users</h2>
+        <button id="toggleSidebar">☰</button>
+        <ul id="user-list">
+            <!-- List of users will be populated here -->
+        </ul>
+    </div>
+
+    <!-- Main chat area -->
+    <div id="chat-container">
+        <div id="messages">
+            <!-- Chat messages will appear here -->
+        </div>
+
+        <!-- Input area for sending messages -->
+        <div id="message-input">
+            <input type="text" id="message" placeholder="Type a message...">
+            <button id="send-message">Send</button>
+        </div>
+    </div>
+
+    <!-- WebSocket Script -->
+    <script>
+        // WebSocket logic for real-time chat
+        const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/chat/');
+
+        // Function to handle WebSocket messages
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const messageElement = document.createElement('div');
+            messageElement.textContent = data.message;
+            document.getElementById('messages').appendChild(messageElement);
+        };
+
+        // Send a message via WebSocket
+        document.getElementById('send-message').onclick = function() {
+            const messageInput = document.getElementById('message');
+            const message = messageInput.value;
+            if (message) {
+                chatSocket.send(JSON.stringify({
+                    'message': message
+                }));
+                messageInput.value = ''; // Clear the input
+            }
+        };
+
+        // Function to fetch the list of users and display in the sidebar
+        function fetchUsers() {
+            fetch('/api/users/')
+                .then(response => response.json())
+                .then(users => {
+                    const userList = document.getElementById('user-list');
+                    userList.innerHTML = ''; // Clear existing list
+                    users.forEach(user => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = user.username;
+                        userList.appendChild(listItem);
+                    });
+                });
+        }
+
+        // Toggle sidebar collapse
+        document.getElementById('toggleSidebar').onclick = function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+        };
+
+        // Initial fetch of users when the page loads
+        fetchUsers();
+    </script>
+</body>
+</html>
